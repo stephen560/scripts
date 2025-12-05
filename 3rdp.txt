@@ -1,14 +1,19 @@
 # First Function is for PowerShell to update Git for Windows
-$gitUrl = "https://github.com/git-for-windows/git/releases/latest/download/Git-2.52.0-64-bit.exe"
-$installer = "$env:TEMP\git-update.exe"
+# Step 1: Define Git for Windows release URL
+$releaseUrl = "https://api.github.com/repos/git-for-windows/git/releases/latest"
 
-Write-Host "Downloading latest Git for Windows..."
-Invoke-WebRequest -Uri $gitUrl -OutFile $installer
+# Step 2: Get latest release info
+$release = Invoke-RestMethod -Uri $releaseUrl -UseBasicParsing
+$asset = $release.assets | Where-Object { $_.name -like "*64-bit.exe" } | Select-Object -First 1
 
-Write-Host "Installing Git silently..."
-Start-Process -FilePath $installer -ArgumentList "/VERYSILENT", "/NORESTART" -Wait
+# Step 3: Download installer
+$installerPath = "$env:TEMP\$($asset.name)"
+Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $installerPath
 
-Write-Host "Git update completed!"
+# Step 4: Run installer silently
+Start-Process -FilePath $installerPath -ArgumentList "/VERYSILENT /NORESTART" -Wait
+
+Write-Host "✅ Git for Windows has been updated to version $($release.tag_name)"
 
 
 # Next Function is for PowerShell to update Notepad++ on Windows
@@ -121,6 +126,7 @@ Write-Host "Update complete. Cleaning up..."
 Remove-Item $InstallerPath -Force
 
 Write-Host "Visual Studio Code has been updated successfully!"
+
 
 
 
