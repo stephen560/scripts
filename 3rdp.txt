@@ -85,7 +85,7 @@ if (Test-Path $vsInstallerPath) {
 }
 
 
-# PowerShell script to update SQL Server Management Studio (SSMS)
+# # Next Function is for PowerShell to update SQL Studio Management (SSMS) on Windows
 
 # Define the download URL for the latest SSMS installer
 # (Update this link when new versions are released)
@@ -103,7 +103,7 @@ Start-Process -FilePath $installerPath -ArgumentList "/install /quiet /norestart
 Write-Host "Update completed. Restart may be required."
 
 
-# Next Function is to Update Visual Studio Code on Windows using PowerShell
+# Next Function is for PowerShell to update Visual Studio Code on Windows
 
 # Define download URL (latest stable build)
 $VSCodeInstaller = "https://update.code.visualstudio.com/latest/win32-x64-user/stable"
@@ -121,6 +121,7 @@ Write-Host "Update complete. Cleaning up..."
 Remove-Item $InstallerPath -Force
 
 Write-Host "Visual Studio Code has been updated successfully!"
+
 
 
 
