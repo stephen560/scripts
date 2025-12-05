@@ -1,4 +1,5 @@
 # First Function is for PowerShell to update Git for Windows
+
 # Step 1: Define Git for Windows release URL
 $releaseUrl = "https://api.github.com/repos/git-for-windows/git/releases/latest"
 
@@ -17,6 +18,7 @@ Write-Host "✅ Git for Windows has been updated to version $($release.tag_name)
 
 
 # Next Function is for PowerShell to update Notepad++ on Windows
+
 # Define GitHub API URL for latest release
 $apiUrl = "https://api.github.com/repos/notepad-plus-plus/notepad-plus-plus/releases/latest"
 
@@ -52,6 +54,7 @@ Write-Host "Notepad++ has been updated to version $($release.tag_name)!"
 
 
 # Next Function is for PowerShell to update Node.js on Windows
+
 # Define Node.js latest release URL (LTS recommended)
 $apiUrl = "https://nodejs.org/dist/index.json"
 
@@ -89,6 +92,7 @@ Write-Host "Node.js has been updated to version $version!"
 
 
 # Next Function is to Force update Google Chrome on Windows
+
 $chromeUpdatePath = "C:\Program Files (x86)\Google\Update\GoogleUpdate.exe"
 
 if (Test-Path $chromeUpdatePath) {
@@ -106,6 +110,7 @@ if (Test-Path $chromeUpdatePath) {
 }
 
 # Next Function is for PowerShell to update Visual Studio on Windows
+
 $vsInstallerPath = "$env:C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe"
 
 # Check if the installer exists
@@ -157,6 +162,7 @@ Write-Host "Update complete. Cleaning up..."
 Remove-Item $InstallerPath -Force
 
 Write-Host "Visual Studio Code has been updated successfully!"
+
 
 
 
