@@ -26,7 +26,7 @@ Write-Output "Update complete!"
 Remove-Item $installerPath
 
 
-# Next Function is for PowerShell to update Notepad++ on Windows
+# Next Function is for PowerShell to update Node.js on Windows
 
 Write-Host "Checking current Node.js version..."
 node -v
@@ -103,4 +103,5 @@ Write-Host "Update complete. Cleaning up..."
 Remove-Item $InstallerPath -Force
 
 Write-Host "Visual Studio Code has been updated successfully!"
+
 
