@@ -17,18 +17,38 @@ Write-Host "✅ Git for Windows has been updated to version $($release.tag_name)
 
 
 # Next Function is for PowerShell to update Notepad++ on Windows
+# Define GitHub API URL for latest release
+$apiUrl = "https://api.github.com/repos/notepad-plus-plus/notepad-plus-plus/releases/latest"
 
-$downloadUrl = "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/latest/download/npp.8.8.8.Installer.x64.exe"
+# Set TLS protocol for compatibility
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+# Get latest release info
+Write-Host "Fetching latest Notepad++ release info..."
+$release = Invoke-RestMethod -Uri $apiUrl -UseBasicParsing
+
+# Find the installer asset (x64 version by default)
+$asset = $release.assets | Where-Object { $_.name -like "*Installer.x64.exe" } | Select-Object -First 1
+
+if (-not $asset) {
+    Write-Host "Could not find installer asset. Exiting."
+    exit 1
+}
+
+# Define download path
 $installerPath = "$env:TEMP\npp_installer.exe"
 
-Write-Output "Downloading latest Notepad++ installer..."
-Invoke-WebRequest -Uri $downloadUrl -OutFile $installerPath
+# Download installer
+Write-Host "Downloading $($asset.name)..."
+Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $installerPath
 
-Write-Output "Running installer silently..."
+# Run installer silently
+Write-Host "Installing Notepad++..."
 Start-Process -FilePath $installerPath -ArgumentList "/S" -Wait
 
-Write-Output "Update complete!"
-Remove-Item $installerPath
+# Cleanup
+Remove-Item $installerPath -Force
+Write-Host "Notepad++ has been updated to version $($release.tag_name)!"
 
 
 # Next Function is for PowerShell to update Node.js on Windows
@@ -126,6 +146,7 @@ Write-Host "Update complete. Cleaning up..."
 Remove-Item $InstallerPath -Force
 
 Write-Host "Visual Studio Code has been updated successfully!"
+
 
 
 
