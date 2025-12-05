@@ -51,30 +51,40 @@ Remove-Item $installerPath -Force
 Write-Host "Notepad++ has been updated to version $($release.tag_name)!"
 
 
-# Next Function is for PowerShell to update Node.js on Windows
+# Next Function is for PowerShell to update Node.js (LTS) on Windows
+$apiUrl = "https://nodejs.org/dist/index.json"
 
-Write-Host "Checking current Node.js version..."
-node -v
+# Ensure TLS compatibility
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-Write-Host "Fetching latest Node.js LTS version..."
-$latestVersion = Invoke-RestMethod -Uri "https://nodejs.org/dist/index.json" | 
-    Where-Object { $_.lts -ne $null } | 
-    Select-Object -First 1 -ExpandProperty version
+Write-Host "Fetching latest Node.js release info..."
+$releases = Invoke-RestMethod -Uri $apiUrl -UseBasicParsing
 
-Write-Host "Latest LTS version is $latestVersion"
+# Pick the latest LTS version (most stable for production)
+$latestLTS = $releases | Where-Object { $_.lts -ne $null } | Select-Object -First 1
 
-# Construct download URL for Windows installer (x64)
-$downloadUrl = "https://nodejs.org/dist/v25.1.0/node-v25.1.0-x64.msi"
-$installerPath = "$env:TEMP\node-update.msi"
+if (-not $latestLTS) {
+    Write-Host "Could not determine latest LTS release. Exiting."
+    exit 1
+}
 
-Write-Host "Downloading installer from $downloadUrl..."
-Invoke-WebRequest -Uri $downloadUrl -OutFile $installerPath
+$version = $latestLTS.version
+Write-Host "Latest LTS version detected: $version"
 
-Write-Host "Running installer..."
-Start-Process msiexec.exe -ArgumentList "/i `"$installerPath`" /quiet /norestart" -Wait
+# Construct download URL for Windows x64 MSI installer
+$installerUrl = "https://nodejs.org/dist/$version/node-$($version)-x64.msi"
+$installerPath = "$env:TEMP\node_installer.msi"
 
-Write-Host "Update complete. Checking new version..."
-node -v
+Write-Host "Downloading Node.js installer..."
+Invoke-WebRequest -Uri $installerUrl -OutFile $installerPath
+
+Write-Host "Installing Node.js silently..."
+Start-Process -FilePath "msiexec.exe" -ArgumentList "/i `"$installerPath`" /quiet /norestart" -Wait
+
+Write-Host "Cleaning up..."
+Remove-Item $installerPath -Force
+
+Write-Host "Node.js has been updated to version $version!"
 
 
 # Next Function is to Force update Google Chrome on Windows
@@ -146,6 +156,7 @@ Write-Host "Update complete. Cleaning up..."
 Remove-Item $InstallerPath -Force
 
 Write-Host "Visual Studio Code has been updated successfully!"
+
 
 
 
