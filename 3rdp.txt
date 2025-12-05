@@ -39,7 +39,7 @@ $latestVersion = Invoke-RestMethod -Uri "https://nodejs.org/dist/index.json" |
 Write-Host "Latest LTS version is $latestVersion"
 
 # Construct download URL for Windows installer (x64)
-$downloadUrl = "https://nodejs.org/dist/v24.11.1/node-v24.11.1-x64.msi"
+$downloadUrl = "https://nodejs.org/dist/v25.1.0/node-v25.1.0-x64.msi"
 $installerPath = "$env:TEMP\node-update.msi"
 
 Write-Host "Downloading installer from $downloadUrl..."
@@ -121,6 +121,7 @@ Write-Host "Update complete. Cleaning up..."
 Remove-Item $InstallerPath -Force
 
 Write-Host "Visual Studio Code has been updated successfully!"
+
 
 
 
