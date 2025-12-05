@@ -70,7 +70,7 @@ if (Test-Path $chromeUpdatePath) {
 }
 
 # Next Function is for PowerShell to update Visual Studio on Windows
-$vsInstallerPath = "$env:C:\Program Files(x86)\Microsoft Visual Studio\Installer\vs_installer.exe"
+$vsInstallerPath = "$env:C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe"
 
 # Check if the installer exists
 if (Test-Path $vsInstallerPath) {
@@ -121,6 +121,7 @@ Write-Host "Update complete. Cleaning up..."
 Remove-Item $InstallerPath -Force
 
 Write-Host "Visual Studio Code has been updated successfully!"
+
 
 
 
