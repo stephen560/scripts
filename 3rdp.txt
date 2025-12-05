@@ -1,0 +1,106 @@
+# First Function is for PowerShell to update Git for Windows
+$gitUrl = "https://github.com/git-for-windows/git/releases/latest/download/Git-2.52.0-64-bit.exe"
+$installer = "$env:TEMP\git-update.exe"
+
+Write-Host "Downloading latest Git for Windows..."
+Invoke-WebRequest -Uri $gitUrl -OutFile $installer
+
+Write-Host "Installing Git silently..."
+Start-Process -FilePath $installer -ArgumentList "/VERYSILENT", "/NORESTART" -Wait
+
+Write-Host "Git update completed!"
+
+
+# Next Function is for PowerShell to update Notepad++ on Windows
+
+$downloadUrl = "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/latest/download/npp.8.8.8.Installer.x64.exe"
+$installerPath = "$env:TEMP\npp_installer.exe"
+
+Write-Output "Downloading latest Notepad++ installer..."
+Invoke-WebRequest -Uri $downloadUrl -OutFile $installerPath
+
+Write-Output "Running installer silently..."
+Start-Process -FilePath $installerPath -ArgumentList "/S" -Wait
+
+Write-Output "Update complete!"
+Remove-Item $installerPath
+
+
+# Next Function is for PowerShell to update Notepad++ on Windows
+
+Write-Host "Checking current Node.js version..."
+node -v
+
+Write-Host "Fetching latest Node.js LTS version..."
+$latestVersion = Invoke-RestMethod -Uri "https://nodejs.org/dist/index.json" | 
+    Where-Object { $_.lts -ne $null } | 
+    Select-Object -First 1 -ExpandProperty version
+
+Write-Host "Latest LTS version is $latestVersion"
+
+# Construct download URL for Windows installer (x64)
+$downloadUrl = "https://nodejs.org/dist/v24.11.1/node-v24.11.1-x64.msi"
+$installerPath = "$env:TEMP\node-update.msi"
+
+Write-Host "Downloading installer from $downloadUrl..."
+Invoke-WebRequest -Uri $downloadUrl -OutFile $installerPath
+
+Write-Host "Running installer..."
+Start-Process msiexec.exe -ArgumentList "/i `"$installerPath`" /quiet /norestart" -Wait
+
+Write-Host "Update complete. Checking new version..."
+node -v
+
+
+# Next Function is to Force update Google Chrome on Windows
+$chromeUpdatePath = "C:\Program Files (x86)\Google\Update\GoogleUpdate.exe"
+
+if (Test-Path $chromeUpdatePath) {
+    Write-Output "Running Chrome update..."
+    & $chromeUpdatePath /update
+} else {
+    Write-Output "Google Update executable not found. Checking 32-bit path..."
+    $chromeUpdatePath = "C:\Program Files (x86)\Google\Update\GoogleUpdate.exe"
+    if (Test-Path $chromeUpdatePath) {
+        Write-Output "Running Chrome update..."
+        & $chromeUpdatePath /update
+    } else {
+        Write-Output "Google Update not found on this system."
+    }
+}
+
+# Next Function is for PowerShell to update Visual Studio on Windows
+$vsInstallerPath = "$env:C:\Program Files(x86)\Microsoft Visual Studio\Installer\vs_installer.exe"
+
+# Check if the installer exists
+if (Test-Path $vsInstallerPath) {
+    Write-Host "Found Visual Studio Installer at $vsInstallerPath"
+    
+    # Run the installer with update command
+    & $vsInstallerPath update --passive --norestart
+    
+    Write-Host "Update process started. Visual Studio will be updated if updates are available."
+} else {
+    Write-Host "Visual Studio Installer not found. Please install Visual Studio Installer first."
+}
+
+
+# Next Function is to Update Visual Studio Code on Windows using PowerShell
+
+# Define download URL (latest stable build)
+$VSCodeInstaller = "https://update.code.visualstudio.com/latest/win32-x64-user/stable"
+
+# Define temporary path for installer
+$InstallerPath = "$env:TEMP\vscode_installer.exe"
+
+Write-Host "Downloading latest VS Code installer..."
+Invoke-WebRequest -Uri $VSCodeInstaller -OutFile $InstallerPath
+
+Write-Host "Running installer silently..."
+Start-Process -FilePath $InstallerPath -ArgumentList "/silent","/mergetasks=!runcode" -Wait
+
+Write-Host "Update complete. Cleaning up..."
+Remove-Item $InstallerPath -Force
+
+Write-Host "Visual Studio Code has been updated successfully!"
+
