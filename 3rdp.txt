@@ -51,7 +51,8 @@ Remove-Item $installerPath -Force
 Write-Host "Notepad++ has been updated to version $($release.tag_name)!"
 
 
-# Next Function is for PowerShell to update Node.js (LTS) on Windows
+# Next Function is for PowerShell to update Node.js on Windows
+# Define Node.js latest release URL (LTS recommended)
 $apiUrl = "https://nodejs.org/dist/index.json"
 
 # Ensure TLS compatibility
@@ -156,6 +157,7 @@ Write-Host "Update complete. Cleaning up..."
 Remove-Item $InstallerPath -Force
 
 Write-Host "Visual Studio Code has been updated successfully!"
+
 
 
 
