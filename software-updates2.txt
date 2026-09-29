@@ -1,0 +1,347 @@
+# ============================================================
+# VISUAL STUDIO UPDATE
+# NON-INTERACTIVE / SILENT MODE
+# ============================================================
+
+$ErrorActionPreference = "Stop"
+
+Write-Host ""
+Write-Host "============================================================"
+Write-Host "     VISUAL STUDIO UPDATE"
+Write-Host "     NON-INTERACTIVE MODE"
+Write-Host "============================================================"
+Write-Host ""
+
+
+# ============================================================
+# CHECK ADMINISTRATOR PRIVILEGES
+# ============================================================
+
+$currentIdentity = [Security.Principal.WindowsIdentity]::GetCurrent()
+$currentPrincipal = New-Object `
+    Security.Principal.WindowsPrincipal($currentIdentity)
+
+if (-not $currentPrincipal.IsInRole(
+    [Security.Principal.WindowsBuiltInRole]::Administrator
+)) {
+    Write-Host "ERROR: Script must be run as Administrator."
+    Write-Host "No UAC/elevation prompt will be displayed."
+    Write-Host ""
+    exit 1
+}
+
+Write-Host "Administrator privileges confirmed."
+Write-Host ""
+
+
+# ============================================================
+# FIND VISUAL STUDIO INSTALLER
+# ============================================================
+
+$vsInstallerPath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\setup.exe"
+
+if (-not (Test-Path $vsInstallerPath)) {
+
+    Write-Host "ERROR: Visual Studio Installer was not found."
+    Write-Host ""
+    Write-Host "Expected location:"
+    Write-Host $vsInstallerPath
+    Write-Host ""
+
+    exit 1
+}
+
+Write-Host "Visual Studio Installer found:"
+Write-Host $vsInstallerPath
+Write-Host ""
+
+
+# ============================================================
+# FIND VISUAL STUDIO INSTALLATIONS
+# ============================================================
+
+$vsWherePath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+
+if (-not (Test-Path $vsWherePath)) {
+
+    Write-Host "ERROR: vswhere.exe was not found."
+    Write-Host "Unable to determine the Visual Studio installation path."
+    Write-Host ""
+
+    exit 1
+}
+
+Write-Host "Searching for installed Visual Studio instances..."
+Write-Host ""
+
+$installPaths = & $vsWherePath `
+    -products * `
+    -requires Microsoft.VisualStudio.Component.CoreEditor `
+    -property installationPath
+
+if (-not $installPaths) {
+
+    Write-Host "No Visual Studio installations were found."
+    Write-Host ""
+
+    exit 0
+}
+
+
+# ============================================================
+# UPDATE EACH VISUAL STUDIO INSTALLATION
+# ============================================================
+
+foreach ($installPath in $installPaths) {
+
+    $installPath = $installPath.Trim()
+
+    if ([string]::IsNullOrWhiteSpace($installPath)) {
+        continue
+    }
+
+    Write-Host "============================================================"
+    Write-Host "Visual Studio installation:"
+    Write-Host $installPath
+    Write-Host "============================================================"
+    Write-Host ""
+
+    Write-Host "Starting silent Visual Studio update..."
+    Write-Host "This may take several minutes."
+    Write-Host ""
+
+    try {
+
+        # IMPORTANT:
+        # --quiet = no installer UI
+        # --norestart = do not automatically restart
+        #
+        # Do NOT use --wait here.
+        # --wait is a bootstrapper parameter.
+        #
+        # PowerShell's -Wait below handles waiting for setup.exe.
+
+        $arguments = @(
+            "update"
+            "--installPath"
+            "`"$installPath`""
+            "--quiet"
+            "--norestart"
+        )
+
+        $process = Start-Process `
+            -FilePath $vsInstallerPath `
+            -ArgumentList $arguments `
+            -Wait `
+            -PassThru `
+            -WindowStyle Hidden `
+            -ErrorAction Stop
+
+        $exitCode = $process.ExitCode
+
+        Write-Host ""
+        Write-Host "Visual Studio installer exit code: $exitCode"
+        Write-Host ""
+
+        switch ($exitCode) {
+
+            0 {
+                Write-Host "Visual Studio update completed successfully."
+            }
+
+            3010 {
+                Write-Host "Visual Studio update completed successfully."
+                Write-Host "A restart is required."
+            }
+
+            default {
+                Write-Host "Visual Studio update returned exit code: $exitCode"
+                Write-Host "The update may have failed."
+            }
+        }
+
+    }
+    catch {
+
+        Write-Host ""
+        Write-Host "ERROR: Visual Studio update failed."
+        Write-Host $_.Exception.Message
+        Write-Host ""
+    }
+
+    Write-Host ""
+}
+
+
+# ============================================================
+# COMPLETE
+# ============================================================
+
+Write-Host "============================================================"
+Write-Host "     VISUAL STUDIO UPDATE COMPLETE"
+Write-Host "============================================================"
+Write-Host ""
+Write-Host "No interactive prompts were used."
+Write-Host "No automatic restart was performed."
+Write-Host "============================================================"
+
+# ============================================================
+# SQL SERVER MANAGEMENT STUDIO (SSMS) UPDATE
+# NON-INTERACTIVE / SILENT MODE
+# ============================================================
+
+$ErrorActionPreference = "Stop"
+
+Write-Host ""
+Write-Host "============================================================"
+Write-Host "     SQL SERVER MANAGEMENT STUDIO UPDATE"
+Write-Host "     NON-INTERACTIVE MODE"
+Write-Host "============================================================"
+Write-Host ""
+
+
+# ------------------------------------------------------------
+# CHECK ADMINISTRATOR PRIVILEGES
+# ------------------------------------------------------------
+
+$currentIdentity = [Security.Principal.WindowsIdentity]::GetCurrent()
+
+$currentPrincipal = New-Object `
+    Security.Principal.WindowsPrincipal($currentIdentity)
+
+if (-not $currentPrincipal.IsInRole(
+    [Security.Principal.WindowsBuiltInRole]::Administrator
+)) {
+    Write-Host "ERROR: Script must be run as Administrator."
+    Write-Host "No UAC/elevation prompt will be displayed."
+    Write-Host ""
+    exit 1
+}
+
+Write-Host "Administrator privileges confirmed."
+Write-Host ""
+
+
+# ------------------------------------------------------------
+# DOWNLOAD LATEST SSMS INSTALLER
+# ------------------------------------------------------------
+
+$ssmsUrl = "https://aka.ms/ssmsfullsetup"
+$installerPath = Join-Path $env:TEMP "SSMS-Setup.exe"
+
+Write-Host "Downloading latest SSMS installer..."
+Write-Host ""
+
+try {
+
+    Invoke-WebRequest `
+        -Uri $ssmsUrl `
+        -OutFile $installerPath `
+        -UseBasicParsing `
+        -ErrorAction Stop
+
+    Write-Host "SSMS installer downloaded successfully."
+    Write-Host ""
+
+}
+catch {
+
+    Write-Host "ERROR: Failed to download SSMS installer."
+    Write-Host $_.Exception.Message
+    Write-Host ""
+
+    exit 1
+}
+
+
+# ------------------------------------------------------------
+# RUN SSMS UPDATE
+# ------------------------------------------------------------
+
+Write-Host "Starting silent SSMS update..."
+Write-Host "No installer window will be displayed."
+Write-Host ""
+
+try {
+
+    $ssmsProcess = Start-Process `
+        -FilePath $installerPath `
+        -ArgumentList "update --quiet --wait --norestart" `
+        -Wait `
+        -PassThru `
+        -WindowStyle Hidden `
+        -ErrorAction Stop
+
+    $ssmsExitCode = $ssmsProcess.ExitCode
+
+}
+catch {
+
+    Write-Host ""
+    Write-Host "ERROR: Unable to start SSMS update."
+    Write-Host $_.Exception.Message
+    Write-Host ""
+
+    Remove-Item `
+        -Path $installerPath `
+        -Force `
+        -ErrorAction SilentlyContinue
+
+    exit 1
+}
+
+
+# ------------------------------------------------------------
+# PROCESS RESULT
+# ------------------------------------------------------------
+
+Write-Host ""
+
+switch ($ssmsExitCode) {
+
+    0 {
+        Write-Host "SSMS update completed successfully."
+    }
+
+    3010 {
+        Write-Host "SSMS update completed successfully."
+        Write-Host "A restart is required."
+    }
+
+    default {
+        Write-Host "SSMS update returned exit code: $ssmsExitCode"
+        Write-Host "The update may have failed."
+    }
+}
+
+
+# ------------------------------------------------------------
+# CLEANUP
+# ------------------------------------------------------------
+
+Write-Host ""
+Write-Host "Cleaning up downloaded installer..."
+
+if (Test-Path $installerPath) {
+
+    Remove-Item `
+        -Path $installerPath `
+        -Force `
+        -ErrorAction SilentlyContinue
+}
+
+Write-Host "Cleanup complete."
+Write-Host ""
+
+
+# ------------------------------------------------------------
+# COMPLETE
+# ------------------------------------------------------------
+
+Write-Host "============================================================"
+Write-Host "     SSMS UPDATE COMPLETE"
+Write-Host "============================================================"
+Write-Host ""
+Write-Host "No interactive prompts were used."
+Write-Host "No automatic restart was performed."
+Write-Host "============================================================"

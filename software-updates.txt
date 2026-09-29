@@ -1,0 +1,394 @@
+# ============================================================
+# GIT + NOTEPAD++ + NODE.JS + GOOGLE CHROME UPDATE SCRIPT
+# NON-INTERACTIVE / SILENT MODE
+# ============================================================
+
+$ErrorActionPreference = "Stop"
+
+Write-Host ""
+Write-Host "============================================================"
+Write-Host "     SOFTWARE UPDATE SCRIPT"
+Write-Host "     GIT / NOTEPAD++ / NODE.JS / GOOGLE CHROME"
+Write-Host "     NON-INTERACTIVE MODE"
+Write-Host "============================================================"
+Write-Host ""
+
+
+# ============================================================
+# CHECK ADMINISTRATOR PRIVILEGES
+# ============================================================
+
+$currentIdentity = [Security.Principal.WindowsIdentity]::GetCurrent()
+
+$currentPrincipal = New-Object `
+    Security.Principal.WindowsPrincipal($currentIdentity)
+
+if (-not $currentPrincipal.IsInRole(
+    [Security.Principal.WindowsBuiltInRole]::Administrator
+)) {
+    Write-Host "ERROR: This script must be run as Administrator."
+    Write-Host "No elevation prompt will be displayed."
+    Write-Host ""
+    exit 1
+}
+
+Write-Host "Administrator privileges confirmed."
+Write-Host ""
+
+
+# ============================================================
+# GIT FOR WINDOWS
+# ============================================================
+
+Write-Host "============================================================"
+Write-Host "     UPDATING GIT FOR WINDOWS"
+Write-Host "============================================================"
+Write-Host ""
+
+$gitApiUrl = "https://api.github.com/repos/git-for-windows/git/releases/latest"
+$gitInstallerPath = $null
+
+try {
+
+    Write-Host "Checking for latest Git for Windows release..."
+
+    $gitRelease = Invoke-RestMethod `
+        -Uri $gitApiUrl `
+        -UseBasicParsing `
+        -ErrorAction Stop
+
+    $gitAsset = $gitRelease.assets |
+        Where-Object {
+            $_.name -match "64-bit\.exe$"
+        } |
+        Select-Object -First 1
+
+    if (-not $gitAsset) {
+        throw "Could not find the 64-bit Git for Windows installer."
+    }
+
+    $gitInstallerPath = Join-Path `
+        $env:TEMP `
+        $gitAsset.name
+
+    Write-Host "Latest Git version: $($gitRelease.tag_name)"
+    Write-Host "Downloading installer..."
+
+    Invoke-WebRequest `
+        -Uri $gitAsset.browser_download_url `
+        -OutFile $gitInstallerPath `
+        -UseBasicParsing `
+        -ErrorAction Stop
+
+    Write-Host "Starting silent Git update..."
+    Write-Host ""
+
+    $gitProcess = Start-Process `
+        -FilePath $gitInstallerPath `
+        -ArgumentList "/VERYSILENT /NORESTART /NOCANCEL /SP-" `
+        -Wait `
+        -PassThru `
+        -WindowStyle Hidden `
+        -ErrorAction Stop
+
+    $gitExitCode = $gitProcess.ExitCode
+
+    switch ($gitExitCode) {
+
+        0 {
+            Write-Host "Git for Windows update completed successfully."
+        }
+
+        3010 {
+            Write-Host "Git for Windows update completed."
+            Write-Host "Restart required."
+        }
+
+        default {
+            Write-Host "Git installer returned exit code: $gitExitCode"
+            Write-Host "Git update may have failed."
+        }
+    }
+
+}
+catch {
+
+    Write-Host "ERROR: Git for Windows update failed."
+    Write-Host $_.Exception.Message
+}
+
+finally {
+
+    if ($gitInstallerPath -and (Test-Path $gitInstallerPath)) {
+        Remove-Item `
+            -Path $gitInstallerPath `
+            -Force `
+            -ErrorAction SilentlyContinue
+    }
+}
+
+Write-Host ""
+
+
+# ============================================================
+# NOTEPAD++
+# ============================================================
+
+Write-Host "============================================================"
+Write-Host "     UPDATING NOTEPAD++"
+Write-Host "============================================================"
+Write-Host ""
+
+$nppApiUrl = "https://api.github.com/repos/notepad-plus-plus/notepad-plus-plus/releases/latest"
+$nppInstallerPath = Join-Path $env:TEMP "npp_installer_x64.exe"
+
+try {
+
+    Write-Host "Checking for latest Notepad++ release..."
+
+    $nppRelease = Invoke-RestMethod `
+        -Uri $nppApiUrl `
+        -UseBasicParsing `
+        -ErrorAction Stop
+
+    $nppAsset = $nppRelease.assets |
+        Where-Object {
+            $_.name -match "Installer\.x64\.exe$"
+        } |
+        Select-Object -First 1
+
+    if (-not $nppAsset) {
+        throw "Could not find the Notepad++ x64 installer."
+    }
+
+    Write-Host "Latest Notepad++ version: $($nppRelease.tag_name)"
+    Write-Host "Downloading installer..."
+
+    Invoke-WebRequest `
+        -Uri $nppAsset.browser_download_url `
+        -OutFile $nppInstallerPath `
+        -UseBasicParsing `
+        -ErrorAction Stop
+
+    Write-Host "Starting silent Notepad++ update..."
+    Write-Host ""
+
+    $nppProcess = Start-Process `
+        -FilePath $nppInstallerPath `
+        -ArgumentList "/S" `
+        -Wait `
+        -PassThru `
+        -WindowStyle Hidden `
+        -ErrorAction Stop
+
+    $nppExitCode = $nppProcess.ExitCode
+
+    switch ($nppExitCode) {
+
+        0 {
+            Write-Host "Notepad++ update completed successfully."
+        }
+
+        3010 {
+            Write-Host "Notepad++ update completed."
+            Write-Host "Restart required."
+        }
+
+        default {
+            Write-Host "Notepad++ installer returned exit code: $nppExitCode"
+            Write-Host "Notepad++ update may have failed."
+        }
+    }
+
+}
+catch {
+
+    Write-Host "ERROR: Notepad++ update failed."
+    Write-Host $_.Exception.Message
+}
+
+finally {
+
+    if (Test-Path $nppInstallerPath) {
+        Remove-Item `
+            -Path $nppInstallerPath `
+            -Force `
+            -ErrorAction SilentlyContinue
+    }
+}
+
+Write-Host ""
+
+
+# ============================================================
+# NODE.JS
+# ============================================================
+
+Write-Host "============================================================"
+Write-Host "     UPDATING NODE.JS"
+Write-Host "============================================================"
+Write-Host ""
+
+$nodeApiUrl = "https://nodejs.org/dist/index.json"
+$nodeInstallerPath = Join-Path $env:TEMP "node_installer_x64.msi"
+
+try {
+
+    Write-Host "Checking for latest Node.js LTS release..."
+
+    $nodeReleases = Invoke-RestMethod `
+        -Uri $nodeApiUrl `
+        -UseBasicParsing `
+        -ErrorAction Stop
+
+    $latestLTS = $nodeReleases |
+        Where-Object {
+            $_.lts -ne $null -and $_.lts -ne $false
+        } |
+        Select-Object -First 1
+
+    if (-not $latestLTS) {
+        throw "Could not determine the latest Node.js LTS release."
+    }
+
+    $nodeVersion = $latestLTS.version
+
+    Write-Host "Latest Node.js LTS version: $nodeVersion"
+
+    $nodeInstallerUrl = `
+        "https://nodejs.org/dist/$nodeVersion/node-$nodeVersion-x64.msi"
+
+    Write-Host "Downloading Node.js installer..."
+
+    Invoke-WebRequest `
+        -Uri $nodeInstallerUrl `
+        -OutFile $nodeInstallerPath `
+        -UseBasicParsing `
+        -ErrorAction Stop
+
+    Write-Host "Starting silent Node.js update..."
+    Write-Host ""
+
+    $nodeProcess = Start-Process `
+        -FilePath "msiexec.exe" `
+        -ArgumentList "/i `"$nodeInstallerPath`" /quiet /norestart" `
+        -Wait `
+        -PassThru `
+        -WindowStyle Hidden `
+        -ErrorAction Stop
+
+    $nodeExitCode = $nodeProcess.ExitCode
+
+    switch ($nodeExitCode) {
+
+        0 {
+            Write-Host "Node.js update completed successfully."
+        }
+
+        3010 {
+            Write-Host "Node.js update completed."
+            Write-Host "Restart required."
+        }
+
+        default {
+            Write-Host "Node.js installer returned exit code: $nodeExitCode"
+            Write-Host "Node.js update may have failed."
+        }
+    }
+
+}
+catch {
+
+    Write-Host "ERROR: Node.js update failed."
+    Write-Host $_.Exception.Message
+}
+
+finally {
+
+    if (Test-Path $nodeInstallerPath) {
+        Remove-Item `
+            -Path $nodeInstallerPath `
+            -Force `
+            -ErrorAction SilentlyContinue
+    }
+}
+
+Write-Host ""
+
+
+# ============================================================
+# GOOGLE CHROME
+# ============================================================
+
+Write-Host "============================================================"
+Write-Host "     UPDATING GOOGLE CHROME"
+Write-Host "============================================================"
+Write-Host ""
+
+$chromeUpdatePaths = @(
+    "${env:ProgramFiles(x86)}\Google\Update\GoogleUpdate.exe",
+    "${env:ProgramFiles}\Google\Update\GoogleUpdate.exe"
+)
+
+$chromeUpdatePath = $chromeUpdatePaths |
+    Where-Object {
+        Test-Path $_
+    } |
+    Select-Object -First 1
+
+if ($chromeUpdatePath) {
+
+    try {
+
+        Write-Host "Google Update found:"
+        Write-Host $chromeUpdatePath
+        Write-Host ""
+
+        Write-Host "Starting Chrome update..."
+
+        $chromeProcess = Start-Process `
+            -FilePath $chromeUpdatePath `
+            -ArgumentList "/update" `
+            -Wait `
+            -PassThru `
+            -WindowStyle Hidden `
+            -ErrorAction Stop
+
+        $chromeExitCode = $chromeProcess.ExitCode
+
+        Write-Host "Google Update completed."
+        Write-Host "Exit code: $chromeExitCode"
+
+    }
+    catch {
+
+        Write-Host "ERROR: Google Chrome update failed."
+        Write-Host $_.Exception.Message
+    }
+
+}
+else {
+
+    Write-Host "Google Update executable was not found."
+    Write-Host "Chrome update skipped."
+}
+
+Write-Host ""
+
+
+# ============================================================
+# COMPLETE
+# ============================================================
+
+Write-Host "============================================================"
+Write-Host "     SOFTWARE UPDATE PROCESS COMPLETE"
+Write-Host "============================================================"
+Write-Host ""
+Write-Host "Git for Windows       - Update checked"
+Write-Host "Notepad++              - Update checked"
+Write-Host "Node.js                - Update checked"
+Write-Host "Google Chrome          - Update checked"
+Write-Host ""
+Write-Host "No interactive installer prompts were used."
+Write-Host "No automatic restart was performed."
+Write-Host "============================================================"
